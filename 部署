@@ -21,3 +21,90 @@ python3 -m venv /opt/douyu/venv
 看到：斗鱼虎牙模块正常
 就通过了
 
+4.放入 server.py
+这一步最重要：需要把之前那台机器上已经验证能运行的双平台 server.py 复制过来。
+原机器文件位置：/opt/douyu/server.py
+新机器也放在：/opt/douyu/server.py
+
+
+文件里的房间列表是：ROOMS = [
+    ("douyu", "4549169", "斗鱼直播1"),
+    ("huya", "147285", "虎牙直播1"),
+]
+
+以后增加房间，就在这里增加一行，例如：
+
+("douyu", "房间号", "斗鱼直播2"),
+("huya", "房间号", "虎牙直播2"),
+
+注意：这里必须使用之前那份完整双平台服务代码，不能只写这个房间列表。它还包含 HTTP 服务、直播解析和 FFmpeg 转发逻辑。
+
+5.检查并测试
+先检查 Python 代码：
+/opt/douyu/venv/bin/python -m py_compile /opt/douyu/server.py
+没有输出，就代表语法检查通过。
+
+前台测试启动：
+/opt/douyu/venv/bin/python /opt/douyu/server.py
+
+正常启动会看到类似：斗鱼 + 虎牙 IPTV 服务启动：0.0.0.0:8088
+
+例如新机器 IP 如果是 192.168.1.100，就访问：
+http://192.168.1.100:8088/playlist.m3u
+
+
+6.设置后台运行和开机启动
+创建 systemd 配置：
+cat > /etc/systemd/system/douyu.service <<'EOF'
+[Unit]
+Description=Douyu Huya IPTV Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/douyu
+ExecStart=/opt/douyu/venv/bin/python /opt/douyu/server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+加载配置：
+systemctl daemon-reload
+
+设置开机启动并立即运行：
+systemctl enable --now douyu
+
+查看状态：systemctl status douyu
+看到 active (running) 就正常。
+
+7.IPTV 添加订阅
+http://新机器的IP:8088/playlist.m3u
+
+例如：http://192.168.1.100:8088/playlist.m3u
+
+新机器如果开启了防火墙，还要允许局域网访问 TCP 8088 端口。
+八、以后维护常用命令
+操作 命令
+查看状态 systemctl status douyu
+启动 systemctl start douyu
+停止 systemctl stop douyu
+重启 systemctl restart douyu
+查看日志 journalctl -u douyu -f
+开机启动 systemctl enable douyu
+取消开机启动 systemctl disable douyu
+修改代码时：systemctl stop douyu
+修改文件后检查：
+/opt/douyu/venv/bin/python -m py_compile /opt/douyu/server.py
+
+再启动：systemctl restart douyu
+
+8.部署时需要记住的几个细节
+斗鱼和虎牙使用同一个服务，但解析相互独立。
+两个平台的播放接口分别是 /live/douyu/房间号 和 /live/huya/房间号。
+画质参数目前使用 OD，但它只是请求原画，不保证直播间实际提供原画。
+SSH 断开不影响后台服务。
+机器重启后，systemd 会自动启动服务。
+特别说明： 以上是完整部署流程，但我这里没有重新贴出之前那份 server.py 的全部源码。换机器时必须把原机器的完整文件复制过去，否则仅凭这些步骤还不能完成部署。
