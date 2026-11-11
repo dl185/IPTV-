@@ -1,2 +1,23 @@
-安装基础环境
+1.安装基础环境
 先在新机器 SSH 登录，执行：
+apt update
+apt install -y python3 python3-venv python3-pip ffmpeg
+
+2.检查安装
+python3 --version
+ffmpeg -version
+
+3.创建 Python 环境
+依次执行：mkdir -p /opt/douyu
+
+python3 -m venv /opt/douyu/venv
+
+升级 pip：/opt/douyu/venv/bin/pip install --upgrade pip
+
+安装解析库：/opt/douyu/venv/bin/pip install streamget
+
+测试：/opt/douyu/venv/bin/python -c "from streamget import DouyuLiveStream, HuyaLiveStream; print('斗鱼虎牙模块正常')"
+
+看到：斗鱼虎牙模块正常
+就通过了
+
