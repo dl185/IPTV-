@@ -108,3 +108,32 @@ http://新机器的IP:8088/playlist.m3u
 SSH 断开不影响后台服务。
 机器重启后，systemd 会自动启动服务。
 特别说明： 以上是完整部署流程，但我这里没有重新贴出之前那份 server.py 的全部源码。换机器时必须把原机器的完整文件复制过去，否则仅凭这些步骤还不能完成部署。
+
+
+
+
+
+推荐做法
+在新机器上：
+把整个 douyu 目录复制到 /opt/。
+删除复制过来的旧虚拟环境。
+重新创建虚拟环境并安装 streamget。
+保留原来的 server.py。
+重新创建 systemd 后台服务。
+关键命令：
+cd /opt/douyu
+rm -rf venv
+python3 -m venv venv
+./venv/bin/pip install --upgrade pip
+./venv/bin/pip install streamget
+
+然后检查：
+./venv/bin/python -c "from streamget import DouyuLiveStream, HuyaLiveStream; print('正常')"
+
+FFmpeg 也要在新机器上安装：
+
+apt update
+apt install -y ffmpeg python3-venv
+
+systemd 配置也需要在新机器上重新创建，不能只复制目录就自动生效。
+我的建议：整个目录复制，重新安装 venv，重新配置 systemd。 这样最稳妥。
